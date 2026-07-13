@@ -1,0 +1,6 @@
+# Personal data exports — don't publish your own backups
+planner-backup-*.json
+*.ics
+
+# Local Claude Code settings
+.claude/
