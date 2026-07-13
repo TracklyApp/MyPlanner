@@ -17,11 +17,13 @@ A single-file personal planner that runs entirely in your browser — no server,
 
 ## Getting started
 
-1. Download `planner.html`.
+1. Download `planner.html` (or use the live app: [tracklyapp.github.io/MyPlanner](https://tracklyapp.github.io/MyPlanner/)).
 2. Open it in any modern browser (double-click, or drag it into a browser window).
 3. Your data is saved locally in that browser via `localStorage` — nothing leaves your machine.
 
-See [`manual.html`](manual.html) for the full user manual (with a read-aloud feature).
+## How to use
+
+The full user manual — every menu, field, and feature explained — lives in [`manual.html`](manual.html). It also has a **🔊 Read aloud** button that narrates each section, and it's linked directly from inside the app itself: open **⚙️ Settings → ❓ How to use**.
 
 ## Data & privacy
 
