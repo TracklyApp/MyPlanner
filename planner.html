@@ -162,6 +162,8 @@
   .card .title a { color: var(--accent); text-decoration: none; }
   .card .title a:hover { text-decoration: underline; }
   .card .meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .card .meta a { color: var(--accent); text-decoration: none; }
+  .card .meta a:hover { text-decoration: underline; }
   .card .note { font-size: 13.5px; color: var(--text); margin-top: 8px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
   .badge {
     display: inline-block;
@@ -1462,6 +1464,60 @@ if (!localStorage.getItem(STORE)) {
   save();
 }
 
+function seedExtraCategories() {
+  if (localStorage.getItem(STORE + '.extraCatsSeeded')) return;
+  const extras = [
+    ["Personal", "🙋"],
+    ["Work", "💼"],
+    ["Finance", "💰"],
+    ["Ideas", "💡"],
+    ["Recipes", "🍳"],
+    ["Travel", "✈️"],
+    ["Health", "❤️"]
+  ];
+  const existingLabels = Object.values(CATS).map(c => c.label.toLowerCase());
+  extras.forEach(([name, icon]) => {
+    if (existingLabels.includes(name.toLowerCase())) return;
+    const key = "cat_" + name.toLowerCase().replace(/[^a-z0-9]+/g, "_") + "_" + uid().slice(0, 4);
+    CATS[key] = { label: name, icon, urlLabel: "Link (optional)" };
+  });
+  saveCustomCats();
+  localStorage.setItem(STORE + '.extraCatsSeeded', 'true');
+}
+
+function seedExtraCategoryItems() {
+  if (localStorage.getItem(STORE + '.extraItemsSeeded')) return;
+  const sample = {
+    "personal": { title: "Call mom this weekend", note: "Catch up, see how she's doing." },
+    "work": { title: "Prepare Q3 report", note: "Pull numbers from last quarter, draft summary.", status: "todo" },
+    "finance": { title: "Track monthly budget", note: "Review spending against this month's budget.", amount: "" },
+    "ideas": { title: "App idea: recipe sharing app", note: "Family members upload and rate each other's recipes." },
+    "recipes": { title: "Grandma's tomato soup", note: "2 lbs tomatoes, 1 onion, garlic, basil, simmer 40 min." },
+    "travel": { title: "Weekend trip to Brasov", note: "Book cabin, check weather, pack hiking boots.", date: localISODate(new Date(Date.now() + 14 * 86400000)) },
+    "health": { title: "Annual checkup", note: "Book appointment with Dr. Ionescu.", date: localISODate(new Date(Date.now() + 30 * 86400000)) }
+  };
+  const byLabel = {};
+  Object.keys(CATS).forEach(k => { byLabel[CATS[k].label.toLowerCase()] = k; });
+  let changed = false;
+  Object.keys(sample).forEach(name => {
+    const key = byLabel[name];
+    if (!key) return;
+    if (items.some(i => i.cat === key)) return;
+    const s = sample[name];
+    items.push({
+      id: uid(), created: Date.now(), cat: key,
+      title: s.title, note: s.note || "", url: "", links: [], image: "",
+      amount: s.amount || "", date: s.date || "", time: "", recurrence: "",
+      status: s.status || "", emailAlert: false, paid: false
+    });
+    changed = true;
+  });
+  if (changed) save();
+  localStorage.setItem(STORE + '.extraItemsSeeded', 'true');
+}
+
+seedExtraCategories();
+seedExtraCategoryItems();
 purgeOldTrash();
 advanceRecurringReminders();
 initFeatures();
