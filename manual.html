@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyPlanner Manual</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<style>
+  :root{
+    --bg:#f7f6f2;
+    --surface:#ffffff;
+    --border:#e4e0d6;
+    --ink:#25241f;
+    --muted:#6e6b60;
+    --accent:#3b53c4;
+    --accent-soft:#ecefFB;
+    --tip:#93630a;
+    --tip-soft:#fbf1dc;
+    --tip-border:#ecd7a8;
+    --code-bg:#efece2;
+    --shadow: 0 1px 2px rgba(30,25,10,.04), 0 8px 24px rgba(30,25,10,.05);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#15161b;
+      --surface:#1c1e25;
+      --border:#2b2d36;
+      --ink:#eceef2;
+      --muted:#9497a3;
+      --accent:#8398ff;
+      --accent-soft:#232a44;
+      --tip:#e0ab48;
+      --tip-soft:#2a2313;
+      --tip-border:#453a1c;
+      --code-bg:#23252d;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15161b; --surface:#1c1e25; --border:#2b2d36; --ink:#eceef2; --muted:#9497a3;
+    --accent:#8398ff; --accent-soft:#232a44; --tip:#e0ab48; --tip-soft:#2a2313; --tip-border:#453a1c;
+    --code-bg:#23252d; --shadow:none;
+  }
+  :root[data-theme="light"]{
+    --bg:#f7f6f2; --surface:#ffffff; --border:#e4e0d6; --ink:#25241f; --muted:#6e6b60;
+    --accent:#3b53c4; --accent-soft:#ecefFB; --tip:#93630a; --tip-soft:#fbf1dc; --tip-border:#ecd7a8;
+    --code-bg:#efece2; --shadow: 0 1px 2px rgba(30,25,10,.04), 0 8px 24px rgba(30,25,10,.05);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  h1,h2,h3{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", ui-serif, serif;
+    text-wrap: balance;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    color: var(--ink);
+  }
+  .layout{
+    display:grid;
+    grid-template-columns: 250px minmax(0,720px);
+    gap: 56px;
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 48px 24px 120px;
+  }
+  @media (max-width: 860px){
+    .layout{ grid-template-columns: 1fr; gap: 36px; padding: 32px 20px 90px; }
+    nav.toc{ position: static !important; order: 2; padding-bottom: 8px; }
+  }
+  @media (max-width: 480px){
+    .layout{ padding: 24px 16px 72px; }
+  }
+  nav.toc{
+    position: sticky;
+    top: 32px;
+    align-self: start;
+    font-size: 13.5px;
+  }
+  nav.toc .eyebrow{
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-size: 11px;
+    color: var(--muted);
+    margin: 0 0 14px;
+    font-weight: 700;
+  }
+  nav.toc ol{
+    list-style: none;
+    margin: 0; padding: 0;
+    counter-reset: toc;
+    border-left: 1px solid var(--border);
+  }
+  nav.toc li{ counter-increment: toc; }
+  nav.toc a{
+    display: block;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 7px 0 7px 16px;
+    margin-left: -1px;
+    border-left: 1px solid transparent;
+    line-height: 1.35;
+  }
+  nav.toc a::before{
+    content: counter(toc, decimal-leading-zero) " ";
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    opacity: .55;
+    margin-right: 4px;
+  }
+  nav.toc a:hover{ color: var(--accent); border-left-color: var(--accent); }
+
+  header.masthead{
+    grid-column: 1 / -1;
+    display:flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  header.masthead .id span{ color: var(--accent); }
+  header.masthead h1{ font-size: clamp(22px, 5vw, 30px); margin: 0; }
+  header.masthead p{ margin: 6px 0 0; color: var(--muted); font-size: 14.5px; }
+  header.masthead .tag{
+    font-size: 11.5px; color: var(--muted); text-align:right;
+    text-transform: uppercase; letter-spacing: .07em; white-space: nowrap;
+  }
+
+  main{ min-width: 0; }
+  section{ padding-top: 8px; margin-bottom: 52px; scroll-margin-top: 28px; }
+  section h2{
+    font-size: 22px;
+    margin: 0 0 4px;
+    display:flex; align-items:center; gap: 10px;
+  }
+  section h2 .num{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  section > .dek{
+    color: var(--muted);
+    font-size: 14.5px;
+    margin: 0 0 20px;
+    max-width: 62ch;
+  }
+  section h3{ font-size: 15.5px; margin: 26px 0 8px; }
+  p{ line-height: 1.62; font-size: 15px; max-width: 66ch; }
+  ul, ol.steps{ line-height: 1.62; font-size: 15px; padding-left: 22px; max-width: 66ch; }
+  ol.steps{ padding-left: 0; list-style: none; counter-reset: step; }
+  ol.steps li{
+    counter-increment: step;
+    position: relative;
+    padding-left: 34px;
+    margin-bottom: 10px;
+  }
+  ol.steps li::before{
+    content: counter(step);
+    position: absolute; left: 0; top: 1px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font-size: 12px; font-weight: 700;
+    display:flex; align-items:center; justify-content:center;
+    font-family: ui-monospace, monospace;
+  }
+
+  .ui{
+    display: inline-flex; align-items:center; gap: 5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1px 8px 2px;
+    font-size: 13.5px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    white-space: nowrap;
+  }
+  @media (max-width: 480px){
+    .ui{ white-space: normal; }
+  }
+
+  .grid-cards{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px,1fr));
+    gap: 12px;
+    margin: 18px 0 6px;
+  }
+  .fcard{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 15px;
+    box-shadow: var(--shadow);
+  }
+  .fcard .ficon{ font-size: 18px; }
+  .fcard h4{ margin: 8px 0 4px; font-size: 14px; }
+  .fcard p{ margin:0; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  table{ border-collapse: collapse; width: 100%; font-size: 14px; margin: 14px 0; min-width: 480px; }
+  .tablewrap{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  th, td{
+    text-align: left; padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th{ color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .04em; }
+
+  .listen-controls{ display:flex; gap: 8px; }
+  .listen-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--accent-soft); color: var(--accent);
+    border: 1px solid transparent;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12.5px; font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .listen-btn:hover{ filter: brightness(1.05); }
+  .listen-btn.ghost{ background: transparent; color: var(--muted); border-color: var(--border); }
+  .listen-btn.playing{ background: var(--accent); color: #fff; }
+  .sec-listen{
+    border: none; background: transparent; color: var(--muted);
+    cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 6px;
+    margin-left: auto;
+  }
+  .sec-listen:hover{ color: var(--accent); background: var(--accent-soft); }
+  .sec-listen.playing{ color: var(--accent); }
+
+  .tip{
+    display:flex; gap: 12px;
+    background: var(--tip-soft);
+    border: 1px solid var(--tip-border);
+    border-left: 3px solid var(--tip);
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .tip .ticon{ color: var(--tip); font-size: 15px; line-height: 1.5; }
+  .tip strong{ color: var(--tip); }
+  .tip p{ margin:0; font-size: 14px; }
+
+  footer.colophon{
+    grid-column: 1/-1;
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+    padding-top: 20px;
+    color: var(--muted);
+    font-size: 12.5px;
+  }
+
+  kbd{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 1px 6px;
+    font-size: 12.5px;
+  }
+
+  a:focus-visible, .ui:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce){ html{ scroll-behavior:auto; } }
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <header class="masthead">
+    <div class="id">
+      <h1>My<span>Planner</span> — User Manual</h1>
+      <p>A complete guide to organizing your notes, websites, bills, and reminders.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div class="tag">Edition&nbsp;1 · Personal use</div>
+      <div class="listen-controls">
+        <button class="listen-btn" id="listenMainBtn" onclick="toggleReadAloud()">🔊 Read aloud</button>
+        <button class="listen-btn ghost" id="listenStopBtn" onclick="stopReadAloud()" hidden>✕ Stop</button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <p class="eyebrow">Contents</p>
+    <ol>
+      <li><a href="#start">Getting started</a></li>
+      <li><a href="#topbar">The top bar</a></li>
+      <li><a href="#menu">The sidebar menu</a></li>
+      <li><a href="#home">The Home dashboard</a></li>
+      <li><a href="#items">Adding an item</a></li>
+      <li><a href="#reminders">Reminders &amp; Calendar</a></li>
+      <li><a href="#email">Email alerts</a></li>
+      <li><a href="#categories">Custom categories</a></li>
+      <li><a href="#trash">Trash</a></li>
+      <li><a href="#data">Export, import &amp; backup</a></li>
+      <li><a href="#tips">Quick tips</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <section id="start">
+      <h2><span class="num">01</span>Getting started</h2>
+      <p class="dek">MyPlanner runs straight from the <span class="ui">planner.html</span> file in your browser — no internet connection or account needed. Everything you enter is saved locally, in this browser, on this device.</p>
+      <ol class="steps">
+        <li>Open <span class="ui">planner.html</span> in your browser (double-click it in your file manager, or use <kbd>Ctrl</kbd>+<kbd>O</kbd> from an open browser window).</li>
+        <li>On first launch, the app seeds a few sample items so you can see how categories and reminders look.</li>
+        <li>Switch themes anytime with the <span class="ui">🌙 / ☀️</span> button in the top bar — your choice is remembered.</li>
+      </ol>
+      <div class="tip">
+        <span class="ticon">＊</span>
+        <p><strong>Good to know:</strong> your data lives inside this browser. Clearing your browser's site data for local files could erase it. Use <span class="ui">Export</span> or <span class="ui">Backup</span> from the Settings menu regularly — see section&nbsp;10.</p>
+      </div>
+    </section>
+
+    <section id="topbar">
+      <h2><span class="num">02</span>The top bar</h2>
+      <p class="dek">Four controls that stay within reach no matter which page you're on.</p>
+      <div class="grid-cards">
+        <div class="fcard"><span class="ficon">🔍</span><h4>Search</h4><p>Finds matches instantly across titles, notes, links, and addresses as you type.</p></div>
+        <div class="fcard"><span class="ficon">🌙</span><h4>Theme</h4><p>Switches between light and dark mode.</p></div>
+        <div class="fcard"><span class="ficon">🔔</span><h4>Notifications</h4><p>Asks your browser for permission to show a native alert when something is due today.</p></div>
+        <div class="fcard"><span class="ficon">💾</span><h4>Save</h4><p>Forces an immediate save of everything currently on screen.</p></div>
+      </div>
+    </section>
+
+    <section id="menu">
+      <h2><span class="num">03</span>The sidebar menu</h2>
+      <p class="dek">The left sidebar is how you move between the app's main views.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Item</th><th>What it shows</th></tr></thead>
+          <tbody>
+            <tr><td class="ui">🏠 Home</td><td>The main dashboard — quick actions, stats, pinned notes, upcoming reminders.</td></tr>
+            <tr><td class="ui">🗂️ All items</td><td>Everything you've saved, sorted chronologically (dated items first).</td></tr>
+            <tr><td class="ui">⏰ Reminders</td><td>Only items that have a reminder date set.</td></tr>
+            <tr><td class="ui">⭐ Favorites</td><td>Items you've starred.</td></tr>
+            <tr><td class="ui">Categories</td><td>A collapsible group — Websites, Books, Emails &amp; Contacts, Ideas &amp; Notes, plus any category you've created.</td></tr>
+            <tr><td class="ui">📅 Calendar</td><td>A week / month / year calendar view — see section&nbsp;6.</td></tr>
+            <tr><td class="ui">⚙️ Settings</td><td>A menu with Export, Export .ics, Backup, Import, your email address, and demo data reset.</td></tr>
+            <tr><td class="ui">🗑️ Trash</td><td>Deleted items, recoverable for 30 days.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="home">
+      <h2><span class="num">04</span>The Home dashboard</h2>
+      <p class="dek">The landing page summarizes everything that matters without opening a single item.</p>
+      <h3>Quick actions</h3>
+      <p><span class="ui">➕ New Note</span> · <span class="ui">✅ New Task</span> · <span class="ui">🌐 Save Website</span> · <span class="ui">📄 Scan Document</span> — each opens the add-item form with the right category already selected.</p>
+      <h3>Stats</h3>
+      <p>The Notes, Tasks, Websites, and Favorites cards show live counts — click Notes, Websites, or Favorites to jump straight to that list.</p>
+      <h3>Pinned Notes &amp; Upcoming Reminders</h3>
+      <p><strong>Pinned Notes</strong> shows anything you've pinned (📌); <strong>Upcoming Reminders</strong> shows everything due in the next 5 days, with a <span class="ui">📧 Email these</span> button to send them all at once. Both sections can be collapsed with the ▾ arrow in their heading.</p>
+      <h3>Categories</h3>
+      <p>Clicking a category (e.g. <span class="ui">📚 Books</span>) narrows the page down to just that category, with a <span class="ui">← Show all</span> button to return.</p>
+    </section>
+
+    <section id="items">
+      <h2><span class="num">05</span>Adding an item</h2>
+      <p class="dek">The add/edit form is shared across every category — fill in only what you need.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Field</th><th>What it's for</th></tr></thead>
+          <tbody>
+            <tr><td>Category</td><td>Website, Book, Email &amp; Contact, Idea &amp; Note, or a category you've created.</td></tr>
+            <tr><td>Title / Link</td><td>The item's name and, optionally, a URL or email address.</td></tr>
+            <tr><td>Links</td><td>Extra links, one per line.</td></tr>
+            <tr><td>Image</td><td>A picture attached to the item (e.g. a scanned invoice).</td></tr>
+            <tr><td>Amount</td><td>Free text for money values — e.g. "315.25 RON".</td></tr>
+            <tr><td>Note</td><td>Free-form details.</td></tr>
+            <tr><td>Date &amp; Time</td><td>When you want to be reminded.</td></tr>
+            <tr><td>Repeat</td><td>Does not repeat / Daily / Weekly / Monthly / Yearly — see section&nbsp;6.</td></tr>
+            <tr><td>Status</td><td>To read/to do, In progress, Done.</td></tr>
+            <tr><td>📧 Email alert</td><td>Include this item in the bulk "Email these" send.</td></tr>
+            <tr><td>✅ Paid</td><td>Marks a bill or installment as paid.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>The <span class="ui">📧</span> button in the bottom-left of the form sends an email with the item's current details right away, even before you save it.</p>
+      <p>Every card in a list has quick actions: <span class="ui">💳/✅</span> paid, <span class="ui">📍/📌</span> pin, <span class="ui">☆/⭐</span> favorite, <span class="ui">✎</span> edit, <span class="ui">🗑</span> delete.</p>
+    </section>
+
+    <section id="reminders">
+      <h2><span class="num">06</span>Reminders &amp; Calendar</h2>
+      <p class="dek">The <span class="ui">📅 Calendar</span> window has three viewing modes.</p>
+      <div class="grid-cards">
+        <div class="fcard"><h4>Week</h4><p>Seven days, Monday through Sunday.</p></div>
+        <div class="fcard"><h4>Month</h4><p>The default view — every reminder in the selected month.</p></div>
+        <div class="fcard"><h4>Year</h4><p>Every reminder in the selected year.</p></div>
+      </div>
+      <p>The <span class="ui">◀ ▶</span> arrows step to the previous/next period.</p>
+      <h3>Recurring reminders</h3>
+      <p>An item with <span class="ui">Repeat</span> set to anything other than "Does not repeat" automatically shows up in every future month/year in the calendar, on the matching day. Once a recurring reminder's date passes, the app rolls it forward to the next occurrence automatically — and <strong>clears the Amount field and turns off Paid</strong>, so you enter fresh values for the new period.</p>
+    </section>
+
+    <section id="email">
+      <h2><span class="num">07</span>Email alerts</h2>
+      <p class="dek">The app never sends email automatically in the background — it opens a pre-filled draft in your mail app, which you send yourself.</p>
+      <ol class="steps">
+        <li>From <span class="ui">⚙️ Settings → 📧 Set my email</span>, enter your address — it's saved locally and auto-fills the "To" field from then on.</li>
+        <li>Turn on the <span class="ui">📧 Email alert</span> switch for any item you want included in bulk sends.</li>
+        <li>Use the <span class="ui">📧</span> button next to a single reminder, or <span class="ui">📧 Email these</span> on Home for everything due in the next 5 days.</li>
+      </ol>
+      <div class="tip">
+        <span class="ticon">＊</span>
+        <p><strong>Making Gmail the default:</strong> if <span class="ui">mailto:</span> links don't open Gmail, visit <span class="ui">mail.google.com</span> in Chrome and allow "Allow Gmail to open all email links" from the address bar, then choose Chrome when Windows asks which app should handle it.</p>
+      </div>
+    </section>
+
+    <section id="categories">
+      <h2><span class="num">08</span>Custom categories</h2>
+      <p class="dek">Beyond the four built-in categories, you can create your own.</p>
+      <ul>
+        <li><strong>Add</strong> — <span class="ui">+ Add category</span> in the menu, then pick a name and an icon.</li>
+        <li><strong>Rename / delete</strong> — hover a custom category to reveal <span class="ui">✎</span> and <span class="ui">🗑</span>.</li>
+        <li><strong>Reorder</strong> — drag a category in the sidebar over another to change its position; the order is remembered on reload.</li>
+      </ul>
+      <p>Deleting a category automatically moves its items into "Ideas &amp; Notes" — nothing is lost.</p>
+    </section>
+
+    <section id="trash">
+      <h2><span class="num">09</span>Trash</h2>
+      <p class="dek">Deleting an item isn't immediately permanent.</p>
+      <p>Deleted items land in <span class="ui">🗑️ Trash</span>, where you can <span class="ui">♻️ Restore</span> them or delete them for good. Anything left in Trash for more than 30 days is cleared automatically.</p>
+    </section>
+
+    <section id="data">
+      <h2><span class="num">10</span>Export, import &amp; backup</h2>
+      <p class="dek">All of these live in the <span class="ui">⚙️ Settings</span> menu.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>⬇️ Export</td><td>Downloads every item as a <code>.json</code> file — a full backup.</td></tr>
+            <tr><td>🗓️ Export .ics</td><td>Downloads your reminders as a calendar file, importable into Google Calendar, Outlook, or Apple Calendar (recurring ones included).</td></tr>
+            <tr><td>💾 Backup</td><td>Saves a snapshot inside this browser, separate from your live data.</td></tr>
+            <tr><td>⬆️ Import</td><td>Loads a previously exported <code>.json</code> file — replaces your current items.</td></tr>
+            <tr><td>♻️ Reset demo data</td><td>Clears everything and reloads the original sample items.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tips">
+      <h2><span class="num">11</span>Quick tips</h2>
+      <ul>
+        <li>Drag a card straight onto a category in the sidebar to re-file it, without opening it.</li>
+        <li>From Home, clicking a category narrows the page down to just that category's items — handy for bills, installments, or websites.</li>
+        <li>The <em>Amount</em> field is free text — write "315.25 RON", "$40", or whatever format you prefer.</li>
+        <li>Anything with a 🔁 icon next to its date is a recurring reminder — check in periodically that the amount is up to date.</li>
+      </ul>
+    </section>
+
+    <footer class="colophon">
+      MyPlanner — manual current as of the latest version of the app. All data stays saved locally, in this browser.
+    </footer>
+  </main>
+</div>
+
+<script>
+(function(){
+  var synth = window.speechSynthesis;
+  var supported = 'speechSynthesis' in window;
+  var mainBtn = document.getElementById('listenMainBtn');
+  var stopBtn = document.getElementById('listenStopBtn');
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  var queue = [];
+  var queueIndex = 0;
+  var activeSecBtn = null;
+  var mode = null; // 'all' | 'section'
+
+  if (!supported) {
+    if (mainBtn) { mainBtn.textContent = '🔇 Not supported'; mainBtn.disabled = true; mainBtn.style.opacity = .5; mainBtn.style.cursor = 'default'; }
+  }
+
+  function pickVoice(){
+    var voices = synth.getVoices();
+    return voices.find(function(v){ return /en/i.test(v.lang); }) || voices[0] || null;
+  }
+
+  function sectionText(sec){
+    return sec.innerText.replace(/\s+/g, ' ').trim();
+  }
+
+  function speakNext(){
+    if (queueIndex >= queue.length) { finishAll(); return; }
+    var utter = new SpeechSynthesisUtterance(queue[queueIndex]);
+    var voice = pickVoice();
+    if (voice) utter.voice = voice;
+    utter.rate = 1;
+    utter.onend = function(){ queueIndex++; speakNext(); };
+    synth.speak(utter);
+  }
+
+  function setUiPlaying(playing){
+    if (!mainBtn) return;
+    mainBtn.textContent = playing ? '⏸ Pause' : '🔊 Read aloud';
+    mainBtn.classList.toggle('playing', playing);
+    if (stopBtn) stopBtn.hidden = !playing && synth.paused === false && !synth.speaking;
+  }
+
+  function finishAll(){
+    setUiPlaying(false);
+    if (stopBtn) stopBtn.hidden = true;
+    if (activeSecBtn) { activeSecBtn.textContent = '🔊'; activeSecBtn.classList.remove('playing'); activeSecBtn = null; }
+    mode = null;
+  }
+
+  function toggleReadAloud(){
+    if (!supported) return;
+    if (synth.speaking && mode === 'all') {
+      if (synth.paused) { synth.resume(); setUiPlaying(true); }
+      else { synth.pause(); setUiPlaying(false); }
+      return;
+    }
+    stopReadAloud();
+    mode = 'all';
+    queue = sections.map(sectionText);
+    queueIndex = 0;
+    if (stopBtn) stopBtn.hidden = false;
+    setUiPlaying(true);
+    speakNext();
+  }
+
+  function stopReadAloud(){
+    synth.cancel();
+    finishAll();
+  }
+
+  function speakSection(sec, btn){
+    if (!supported) return;
+    if (synth.speaking && activeSecBtn === btn) { stopReadAloud(); return; }
+    stopReadAloud();
+    mode = 'section';
+    queue = [sectionText(sec)];
+    queueIndex = 0;
+    activeSecBtn = btn;
+    btn.textContent = '⏸';
+    btn.classList.add('playing');
+    if (stopBtn) stopBtn.hidden = false;
+    speakNext();
+  }
+
+  window.toggleReadAloud = toggleReadAloud;
+  window.stopReadAloud = stopReadAloud;
+
+  sections.forEach(function(sec){
+    var h2 = sec.querySelector('h2');
+    if (!h2) return;
+    var btn = document.createElement('button');
+    btn.className = 'sec-listen';
+    btn.type = 'button';
+    btn.title = 'Listen to this section';
+    btn.textContent = '🔊';
+    btn.addEventListener('click', function(){ speakSection(sec, btn); });
+    h2.appendChild(btn);
+  });
+
+  window.addEventListener('beforeunload', function(){ if (supported) synth.cancel(); });
+})();
+</script>
+</body>
+</html>
