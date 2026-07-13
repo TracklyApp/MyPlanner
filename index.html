@@ -607,6 +607,23 @@ const BASE_CATS = {
   idea:    { label: "Ideas & Notes", icon: "💡", urlLabel: "Link (optional)" },
 };
 const STORE = "myplanner.items.v1";
+const UNLOCK_CODE = "Q7@Lm#92Xv!Pk4$Rt8NzW6";
+const ADD_LIMIT = 3;
+function isUnlocked() { return localStorage.getItem(STORE + ".unlocked") === "true"; }
+function getCreatedCount() { return parseInt(localStorage.getItem(STORE + ".createdCount") || "0", 10); }
+function incrementCreatedCount() { localStorage.setItem(STORE + ".createdCount", String(getCreatedCount() + 1)); }
+function checkAddGate() {
+  if (isUnlocked() || getCreatedCount() < ADD_LIMIT) return true;
+  const code = prompt(`You've reached the ${ADD_LIMIT}-item limit. Enter your unlock code to add more:`);
+  if (code === null) return false;
+  if (code === UNLOCK_CODE) {
+    localStorage.setItem(STORE + ".unlocked", "true");
+    alert("Unlocked! You can now add unlimited items.");
+    return true;
+  }
+  alert("Incorrect code.");
+  return false;
+}
 const CATS_STORE = STORE + ".customCats";
 function loadCustomCats() { try { return JSON.parse(localStorage.getItem(CATS_STORE)) || {}; } catch { return {}; } }
 function saveCustomCats() {
@@ -992,6 +1009,7 @@ function changeStatus(id, val) {
 
 // ---- Modal ----
 function openModal(id, presetCat, presetStatus) {
+  if (!id && !checkAddGate()) return;
   document.getElementById("overlay").classList.add("show");
   const t = document.getElementById("modalTitle");
   if (id) {
@@ -1067,6 +1085,7 @@ function saveItem() {
     Object.assign(it, data);
   } else {
     items.push({ id: uid(), created: Date.now(), ...data });
+    incrementCreatedCount();
   }
   save();
   closeModal();
