@@ -328,8 +328,9 @@
 
     <section id="topbar">
       <h2><span class="num">02</span>The top bar</h2>
-      <p class="dek">Four controls that stay within reach no matter which page you're on.</p>
+      <p class="dek">The controls that stay within reach no matter which page you're on.</p>
       <div class="grid-cards">
+        <div class="fcard"><span class="ficon">☰</span><h4>Menu</h4><p>On narrow screens (phones/tablets), opens the sidebar as a slide-in drawer. Hidden on desktop, where the sidebar is always visible.</p></div>
         <div class="fcard"><span class="ficon">🔍</span><h4>Search</h4><p>Finds matches instantly across titles, notes, links, and addresses as you type.</p></div>
         <div class="fcard"><span class="ficon">🌙</span><h4>Theme</h4><p>Switches between light and dark mode.</p></div>
         <div class="fcard"><span class="ficon">🔔</span><h4>Notifications</h4><p>Asks your browser for permission to show a native alert when something is due today.</p></div>
@@ -339,7 +340,7 @@
 
     <section id="menu">
       <h2><span class="num">03</span>The sidebar menu</h2>
-      <p class="dek">The left sidebar is how you move between the app's main views.</p>
+      <p class="dek">The sidebar is how you move between the app's main views. On desktop it's always visible on the left; on phones, tap <span class="ui">☰</span> in the top bar to slide it in, and tap any item (or the darkened background) to close it again.</p>
       <div class="tablewrap">
         <table>
           <thead><tr><th>Item</th><th>What it shows</th></tr></thead>
@@ -348,13 +349,14 @@
             <tr><td class="ui">🗂️ All items</td><td>Everything you've saved, sorted chronologically (dated items first).</td></tr>
             <tr><td class="ui">⏰ Reminders</td><td>Only items that have a reminder date set.</td></tr>
             <tr><td class="ui">⭐ Favorites</td><td>Items you've starred.</td></tr>
-            <tr><td class="ui">Categories</td><td>A collapsible group — Websites, Books, Emails &amp; Contacts, Ideas &amp; Notes, plus any category you've created.</td></tr>
+            <tr><td class="ui">Categories</td><td>A collapsible group — Websites, Books, Emails &amp; Contacts, Ideas &amp; Notes, Personal, Work, Finance, Ideas, Recipes, Travel, Health, plus any category you create.</td></tr>
             <tr><td class="ui">📅 Calendar</td><td>A week / month / year calendar view — see section&nbsp;6.</td></tr>
-            <tr><td class="ui">⚙️ Settings</td><td>A menu with Export, Export .ics, Backup, Import, your email address, and demo data reset.</td></tr>
+            <tr><td class="ui">⚙️ Settings</td><td>Opens the Settings window — Manage categories, Export, Export .ics, Backup, Import, your email address, How to use, and demo data reset. Works the same on desktop and mobile.</td></tr>
             <tr><td class="ui">🗑️ Trash</td><td>Deleted items, recoverable for 30 days.</td></tr>
           </tbody>
         </table>
       </div>
+      <p>The same core items (Home, Notes, Search, Calendar, Settings) are also pinned to a bottom bar on phones for quick one-thumb access.</p>
     </section>
 
     <section id="home">
@@ -367,7 +369,7 @@
       <h3>Pinned Notes &amp; Upcoming Reminders</h3>
       <p><strong>Pinned Notes</strong> shows anything you've pinned (📌); <strong>Upcoming Reminders</strong> shows everything due in the next 5 days, with a <span class="ui">📧 Email these</span> button to send them all at once. Both sections can be collapsed with the ▾ arrow in their heading.</p>
       <h3>Categories</h3>
-      <p>Clicking a category (e.g. <span class="ui">📚 Books</span>) narrows the page down to just that category, with a <span class="ui">← Show all</span> button to return.</p>
+      <p>Clicking a category (e.g. <span class="ui">📚 Books</span>) narrows the page down to just that category, showing a horizontally-scrolling row of its items, a <span class="ui">+ Add item</span> button preset to that category, and a <span class="ui">← Show all</span> button to return.</p>
     </section>
 
     <section id="items">
@@ -424,11 +426,12 @@
 
     <section id="categories">
       <h2><span class="num">08</span>Custom categories</h2>
-      <p class="dek">Beyond the four built-in categories, you can create your own.</p>
+      <p class="dek">Beyond the built-in categories (Websites, Books, Emails &amp; Contacts, Ideas &amp; Notes) and the starter set (Personal, Work, Finance, Ideas, Recipes, Travel, Health), you can create your own.</p>
+      <p>Manage them from <span class="ui">⚙️ Settings → 🏷️ Manage categories</span> — this works the same on desktop and mobile:</p>
       <ul>
-        <li><strong>Add</strong> — <span class="ui">+ Add category</span> in the menu, then pick a name and an icon.</li>
-        <li><strong>Rename / delete</strong> — hover a custom category to reveal <span class="ui">✎</span> and <span class="ui">🗑</span>.</li>
-        <li><strong>Reorder</strong> — drag a category in the sidebar over another to change its position; the order is remembered on reload.</li>
+        <li><strong>Add</strong> — <span class="ui">+ Add category</span> at the bottom of the list, then pick a name and an icon.</li>
+        <li><strong>Rename / delete</strong> — every custom category has ✎ and 🗑 buttons next to it (built-in categories are marked "built-in" and can't be removed).</li>
+        <li><strong>Reorder</strong> (desktop sidebar only) — drag a category over another to change its position; the order is remembered on reload.</li>
       </ul>
       <p>Deleting a category automatically moves its items into "Ideas &amp; Notes" — nothing is lost.</p>
     </section>
