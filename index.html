@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Planner</title>
 <link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3b53c4">
+<link rel="apple-touch-icon" href="icon-512.png">
 <style>
   :root {
     --bg: #f4f5f7;
@@ -1643,6 +1646,12 @@ advanceRecurringReminders();
 initFeatures();
 render();
 checkReminders();
+
+if ("serviceWorker" in navigator && location.protocol !== "file:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
