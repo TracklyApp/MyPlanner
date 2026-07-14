@@ -4,3 +4,6 @@ planner-backup-*.json
 
 # Local Claude Code settings
 .claude/
+
+# Contains access code/link — not for version control
+cod+link.txt
