@@ -1388,13 +1388,31 @@ function checkReminders(force){
   localStorage.setItem(STORE + '.lastNotify', today);
 }
 
+async function saveFileWithDialog(blob, filename, mimeType, extension, description){
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description, accept: { [mimeType]: [extension] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (e) {
+      if (e.name === "AbortError") return; // user cancelled the dialog
+      // fall through to the plain download below if the picker itself failed
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 function exportItems(){
   const data = JSON.stringify(items, null, 2);
   const blob = new Blob([data], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `planner-backup-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
+  saveFileWithDialog(blob, `planner-backup-${new Date().toISOString().slice(0,10)}.json`, "application/json", ".json", "JSON file");
 }
 function icsEscape(s){
   return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
@@ -1432,10 +1450,7 @@ function exportICS(){
   });
   lines.push("END:VCALENDAR");
   const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `planner-reminders-${localISODate()}.ics`;
-  document.body.appendChild(a); a.click(); a.remove();
+  saveFileWithDialog(blob, `planner-reminders-${localISODate()}.ics`, "text/calendar", ".ics", "Calendar file");
 }
 function importFile(evt){
   const f = evt.target.files[0]; if(!f) return;
