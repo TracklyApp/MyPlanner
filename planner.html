@@ -888,7 +888,11 @@ function render() {
   const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites", paid: "Paid" };
   const pageTitle = titles[filter] || (CATS[filter] && CATS[filter].label) || filter;
   document.getElementById("pageTitle").textContent = query ? `Search: “${query}”` : pageTitle;
-  document.getElementById("pageSub").textContent = `${list.length} item${list.length!==1?"s":""}`;
+  const withAmount = list.filter(i => i.amount);
+  const paidCount = list.filter(i => i.paid).length;
+  const subParts = [`${list.length} item${list.length!==1?"s":""}`];
+  if (withAmount.length) subParts.push(`${paidCount} of ${withAmount.length} paid`);
+  document.getElementById("pageSub").textContent = subParts.join(" · ");
 
   const el = document.getElementById("list");
   if (!list.length) {
