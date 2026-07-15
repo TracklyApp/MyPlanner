@@ -992,7 +992,7 @@ function emailUpcomingReminders() {
   const todayStr = localISODate(today);
   const next5Days = Array.from({ length: 5 }, (_, n) => localISODate(new Date(today.getTime() + n * 86400000)));
   const dayLabel = d => d === todayStr ? "Today" : d === next5Days[1] ? "Tomorrow" : new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  const list = activeItems().filter(i => next5Days.includes(i.date) && i.emailAlert)
+  const list = activeItems().filter(i => next5Days.includes(i.date) && i.emailAlert && !i.paid)
     .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
   if (!list.length) { alert("No reminders with email alerts on in the next 5 days."); return; }
   const subject = encodeURIComponent(`Reminders (${list.length})`);
@@ -1176,7 +1176,7 @@ function renderDashboard() {
     if (!a.date && b.date) return 1;
     return a.created - b.created;
   });
-  const upcoming = active.filter(i => next5Days.includes(i.date))
+  const upcoming = active.filter(i => next5Days.includes(i.date) && !i.paid)
     .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
   const todayItems = upcoming.filter(i => i.date === todayStr);
   const restUpcoming = upcoming.filter(i => i.date !== todayStr);
