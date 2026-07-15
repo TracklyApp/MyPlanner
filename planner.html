@@ -710,11 +710,13 @@ function buildNav() {
   const active = activeItems();
   const reminderCount = active.filter(i => i.date).length;
   const favoriteCount = active.filter(i => i.favorite).length;
+  const paidCount = active.filter(i => i.paid).length;
   const trashCount = items.filter(i => i.deleted).length;
   let html = navItem("dashboard", "🏠", "Home", null);
   html += navItem("all", "🗂️", "All items", active.length);
   html += navItem("reminders", "⏰", "Reminders", reminderCount);
   html += navItem("favorites", "⭐", "Favorites", favoriteCount);
+  html += navItem("paid", "✅", "Paid", paidCount);
   html += `<div class="nav-group-head" onclick="toggleCategories()">
     <span class="chev">${categoriesOpen ? "−" : "+"}</span><span>Categories</span></div>`;
   if (categoriesOpen) {
@@ -861,6 +863,7 @@ function render() {
 
   if (effectiveFilter === "reminders") list = list.filter(i => i.date);
   else if (effectiveFilter === "favorites") list = list.filter(i => i.favorite);
+  else if (effectiveFilter === "paid") list = list.filter(i => i.paid);
   else if (effectiveFilter !== "all") list = list.filter(i => i.cat === effectiveFilter);
 
   if (query) {
@@ -882,7 +885,7 @@ function render() {
   });
 
   // titles
-  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites" };
+  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites", paid: "Paid" };
   const pageTitle = titles[filter] || (CATS[filter] && CATS[filter].label) || filter;
   document.getElementById("pageTitle").textContent = query ? `Search: “${query}”` : pageTitle;
   document.getElementById("pageSub").textContent = `${list.length} item${list.length!==1?"s":""}`;
@@ -1190,13 +1193,14 @@ function renderDashboard() {
   const row = (i, metaTxt) => {
     const meta = metaTxt !== undefined ? metaTxt : (i.date ? fmtDate(i.date) + (i.time ? " · " + fmtTime(i.time) : "") : "");
     const isToday = i.date === todayStr;
+    const paidTag = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:8px">✅ Paid</span>` : "";
     return `<div class="dash-row${isToday ? ' today' : ''}" onclick="openModal('${i.id}')">
-    <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>
+    <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>${paidTag}
     <span class="rmeta">${meta}</span></div>`;
   };
 
   const hcard = i => `<div class="hcard" onclick="openModal('${i.id}')">
-    <span class="badge cat">${CATS[i.cat].icon} ${escapeHtml(CATS[i.cat].label)}</span>
+    <span class="badge cat">${CATS[i.cat].icon} ${escapeHtml(CATS[i.cat].label)}</span>${i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:6px">✅</span>` : ""}
     <div class="htitle" style="margin-top:8px">${escapeHtml(i.title || i.url || i.note || "(untitled)")}</div>
     ${i.amount ? `<div class="hmeta">💰 ${escapeHtml(i.amount)}</div>` : ""}
   </div>`;
