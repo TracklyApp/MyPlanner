@@ -486,11 +486,11 @@
       <textarea id="fLinks" placeholder="https://example.com\nhttps://another.com"></textarea>
     </div>
     <div class="field">
-      <label>Image (optional)</label>
-      <input id="fImage" type="file" accept="image/*">
+      <label>Images (optional)</label>
+      <input id="fImage" type="file" accept="image/*" multiple>
       <input id="fImageData" type="hidden">
-      <div id="fImagePreview" style="margin-top:8px"></div>
-      <div style="margin-top:6px"><button class="btn secondary" type="button" onclick="removeImage()">Remove image</button></div>
+      <div id="fImagePreview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div style="margin-top:6px"><button class="btn secondary" type="button" onclick="removeImage()">Clear all images</button></div>
     </div>
     <div class="field">
       <label>Amount (optional)</label>
@@ -948,7 +948,8 @@ function render() {
     const paidHtml = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:6px">✅ Paid</span>` : "";
     const doneHtml = i.done ? `<span class="badge" style="background:#232b3d;color:#8fb4e8;margin-left:6px">☑️ Done</span>` : "";
     const linksHtml = (i.links && i.links.length) ? `<div class="meta">` + i.links.map(l => `<div><a href="${escapeAttr(l)}" target="_blank" rel="noopener">${escapeHtml(l)}</a></div>`).join('') + `</div>` : '';
-    const imgHtml = i.image ? `<div style="margin-top:10px"><img src="${escapeAttr(i.image)}" style="max-width:160px;border-radius:8px;display:block"></div>` : '';
+    const imgs = (i.images && i.images.length) ? i.images : (i.image ? [i.image] : []);
+    const imgHtml = imgs.length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">` + imgs.map(src => `<img src="${escapeAttr(src)}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;display:block">`).join('') + `</div>` : '';
     return `<div class="card" draggable="true" ondragstart="onDragStart(event)" data-id="${i.id}">
       <div class="top">
         <div style="flex:1">
@@ -1057,12 +1058,11 @@ function openModal(id, presetCat, presetStatus) {
     document.getElementById("fRecurrence").value = it.recurrence || "";
     document.getElementById("fStatus").value = it.status || "";
     document.getElementById("fLinks").value = (it.links && it.links.length) ? it.links.join('\n') : '';
-    document.getElementById("fImageData").value = it.image || '';
+    modalImages = (it.images && it.images.length) ? [...it.images] : (it.image ? [it.image] : []);
+    renderImagePreview();
     document.getElementById("fEmailAlert").checked = !!it.emailAlert;
     document.getElementById("fPaid").checked = !!it.paid;
     document.getElementById("fDone").checked = !!it.done;
-    if(it.image) document.getElementById('fImagePreview').innerHTML = `<img src="${escapeAttr(it.image)}" style="max-width:180px;border-radius:8px">`;
-    else document.getElementById('fImagePreview').innerHTML = '';
   } else {
     t.textContent = "Add item";
     document.getElementById("editId").value = "";
@@ -1076,8 +1076,8 @@ function openModal(id, presetCat, presetStatus) {
     document.getElementById("fRecurrence").value = "";
     document.getElementById("fStatus").value = presetStatus || "";
     document.getElementById("fLinks").value = '';
-    document.getElementById("fImageData").value = '';
-    document.getElementById('fImagePreview').innerHTML = '';
+    modalImages = [];
+    renderImagePreview();
     document.getElementById("fEmailAlert").checked = false;
     document.getElementById("fPaid").checked = false;
     document.getElementById("fDone").checked = false;
@@ -1108,12 +1108,13 @@ function saveItem() {
     recurrence: document.getElementById("fRecurrence").value,
     status: document.getElementById("fStatus").value,
     links: (document.getElementById("fLinks").value || '').split(/\r?\n/).map(s=>s.trim()).filter(Boolean),
-    image: document.getElementById("fImageData").value || '',
+    images: [...modalImages],
+    image: modalImages[0] || '',
     emailAlert: document.getElementById("fEmailAlert").checked,
     paid: document.getElementById("fPaid").checked,
     done: document.getElementById("fDone").checked
   };
-  if (!data.title && !data.url && !data.note && (!data.links || !data.links.length) && !data.image) { alert("Add at least a title, link, note, image or links."); return; }
+  if (!data.title && !data.url && !data.note && (!data.links || !data.links.length) && !data.images.length) { alert("Add at least a title, link, note, image or links."); return; }
   if (id) {
     const it = items.find(x => x.id === id);
     Object.assign(it, data);
@@ -1493,22 +1494,39 @@ function backupNow(){
   alert('Backup saved locally.');
 }
 
+let modalImages = [];
+function renderImagePreview(){
+  const prev = document.getElementById('fImagePreview');
+  prev.innerHTML = modalImages.map((src, idx) => `
+    <div style="position:relative">
+      <img src="${escapeAttr(src)}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;display:block">
+      <button type="button" onclick="removeImageAt(${idx})" title="Remove"
+        style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:13px;line-height:1">✕</button>
+    </div>`).join('');
+  document.getElementById('fImageData').value = JSON.stringify(modalImages);
+}
+function removeImageAt(idx){
+  modalImages.splice(idx, 1);
+  renderImagePreview();
+}
 function removeImage(){
+  modalImages = [];
   const inp = document.getElementById('fImage'); if(inp) inp.value = '';
-  const data = document.getElementById('fImageData'); if(data) data.value = '';
-  const prev = document.getElementById('fImagePreview'); if(prev) prev.innerHTML = '';
+  renderImagePreview();
 }
 
 function handleImageChange(e){
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  const reader = new FileReader();
-  reader.onload = function(){
-    const data = reader.result;
-    document.getElementById('fImageData').value = data;
-    document.getElementById('fImagePreview').innerHTML = `<img src="${escapeAttr(data)}" style="max-width:180px;border-radius:8px">`;
-  };
-  reader.readAsDataURL(f);
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+  Promise.all(files.map(f => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(f);
+  }))).then(results => {
+    modalImages.push(...results);
+    renderImagePreview();
+    e.target.value = '';
+  });
 }
 
 let calendarView = "month";
