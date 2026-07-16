@@ -720,12 +720,14 @@ function buildNav() {
   const reminderCount = active.filter(i => i.date).length;
   const favoriteCount = active.filter(i => i.favorite).length;
   const paidCount = active.filter(i => i.paid).length;
+  const doneCount = active.filter(i => i.done).length;
   const trashCount = items.filter(i => i.deleted).length;
   let html = navItem("dashboard", "🏠", "Home", null);
   html += navItem("all", "🗂️", "All items", active.length);
   html += navItem("reminders", "⏰", "Reminders", reminderCount);
   html += navItem("favorites", "⭐", "Favorites", favoriteCount);
   html += navItem("paid", "✅", "Paid", paidCount);
+  html += navItem("done", "☑️", "Done", doneCount);
   html += `<div class="nav-group-head" onclick="toggleCategories()">
     <span class="chev">${categoriesOpen ? "−" : "+"}</span><span>Categories</span></div>`;
   if (categoriesOpen) {
@@ -873,6 +875,7 @@ function render() {
   if (effectiveFilter === "reminders") list = list.filter(i => i.date);
   else if (effectiveFilter === "favorites") list = list.filter(i => i.favorite);
   else if (effectiveFilter === "paid") list = list.filter(i => i.paid);
+  else if (effectiveFilter === "done") list = list.filter(i => i.done);
   else if (effectiveFilter !== "all") list = list.filter(i => i.cat === effectiveFilter);
 
   if (query) {
@@ -881,7 +884,9 @@ function render() {
       (i.title||"").toLowerCase().includes(q) ||
       (i.note||"").toLowerCase().includes(q) ||
         (i.url||"").toLowerCase().includes(q) ||
-        ((i.links||[]).join(' ').toLowerCase().includes(q))
+        ((i.links||[]).join(' ').toLowerCase().includes(q)) ||
+        (i.paid && "paid".includes(q)) ||
+        (i.done && "done".includes(q))
     );
   }
 
@@ -894,7 +899,7 @@ function render() {
   });
 
   // titles
-  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites", paid: "Paid" };
+  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites", paid: "Paid", done: "Done" };
   const pageTitle = titles[filter] || (CATS[filter] && CATS[filter].label) || filter;
   document.getElementById("pageTitle").textContent = query ? `Search: “${query}”` : pageTitle;
   const withAmount = list.filter(i => i.amount);
