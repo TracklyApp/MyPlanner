@@ -484,11 +484,11 @@
       <textarea id="fLinks" placeholder="https://example.com\nhttps://another.com"></textarea>
     </div>
     <div class="field">
-      <label>Image (optional)</label>
-      <input id="fImage" type="file" accept="image/*">
+      <label>Images (optional)</label>
+      <input id="fImage" type="file" accept="image/*" multiple>
       <input id="fImageData" type="hidden">
-      <div id="fImagePreview" style="margin-top:8px"></div>
-      <div style="margin-top:6px"><button class="btn secondary" type="button" onclick="removeImage()">Remove image</button></div>
+      <div id="fImagePreview" style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div style="margin-top:6px"><button class="btn secondary" type="button" onclick="removeImage()">Clear all images</button></div>
     </div>
     <div class="field">
       <label>Amount (optional)</label>
@@ -541,6 +541,15 @@
         <span>✅ Paid</span>
         <span class="switch">
           <input type="checkbox" id="fPaid">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </span>
+      </label>
+    </div>
+    <div class="field">
+      <label class="switch-row">
+        <span>☑️ Done</span>
+        <span class="switch">
+          <input type="checkbox" id="fDone">
           <span class="switch-track"><span class="switch-thumb"></span></span>
         </span>
       </label>
@@ -688,6 +697,7 @@ function advanceRecurringReminders() {
       i.date = newDate;
       i.amount = "";
       i.paid = false;
+      i.done = false;
       changed = true;
     }
   });
@@ -708,11 +718,15 @@ function buildNav() {
   const active = activeItems();
   const reminderCount = active.filter(i => i.date).length;
   const favoriteCount = active.filter(i => i.favorite).length;
+  const paidCount = active.filter(i => i.paid).length;
+  const doneCount = active.filter(i => i.done).length;
   const trashCount = items.filter(i => i.deleted).length;
   let html = navItem("dashboard", "🏠", "Home", null);
   html += navItem("all", "🗂️", "All items", active.length);
   html += navItem("reminders", "⏰", "Reminders", reminderCount);
   html += navItem("favorites", "⭐", "Favorites", favoriteCount);
+  html += navItem("paid", "✅", "Paid", paidCount);
+  html += navItem("done", "☑️", "Done", doneCount);
   html += `<div class="nav-group-head" onclick="toggleCategories()">
     <span class="chev">${categoriesOpen ? "−" : "+"}</span><span>Categories</span></div>`;
   if (categoriesOpen) {
@@ -859,6 +873,8 @@ function render() {
 
   if (effectiveFilter === "reminders") list = list.filter(i => i.date);
   else if (effectiveFilter === "favorites") list = list.filter(i => i.favorite);
+  else if (effectiveFilter === "paid") list = list.filter(i => i.paid);
+  else if (effectiveFilter === "done") list = list.filter(i => i.done);
   else if (effectiveFilter !== "all") list = list.filter(i => i.cat === effectiveFilter);
 
   if (query) {
@@ -867,7 +883,9 @@ function render() {
       (i.title||"").toLowerCase().includes(q) ||
       (i.note||"").toLowerCase().includes(q) ||
         (i.url||"").toLowerCase().includes(q) ||
-        ((i.links||[]).join(' ').toLowerCase().includes(q))
+        ((i.links||[]).join(' ').toLowerCase().includes(q)) ||
+        (i.paid && "paid".includes(q)) ||
+        (i.done && "done".includes(q))
     );
   }
 
@@ -880,10 +898,14 @@ function render() {
   });
 
   // titles
-  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites" };
+  const titles = { all: "All items", reminders: "Reminders", favorites: "Favorites", paid: "Paid", done: "Done" };
   const pageTitle = titles[filter] || (CATS[filter] && CATS[filter].label) || filter;
   document.getElementById("pageTitle").textContent = query ? `Search: “${query}”` : pageTitle;
-  document.getElementById("pageSub").textContent = `${list.length} item${list.length!==1?"s":""}`;
+  const withAmount = list.filter(i => i.amount);
+  const paidCount = list.filter(i => i.paid).length;
+  const subParts = [`${list.length} item${list.length!==1?"s":""}`];
+  if (withAmount.length) subParts.push(`${paidCount} of ${withAmount.length} paid`);
+  document.getElementById("pageSub").textContent = subParts.join(" · ");
 
   const el = document.getElementById("list");
   if (!list.length) {
@@ -923,12 +945,14 @@ function render() {
     const urlMeta = i.url ? `<div class="meta">${escapeHtml(i.url)}</div>` : "";
     const amountHtml = i.amount ? `<div class="badge" style="background:var(--bg);color:var(--text);margin-top:6px">💰 ${escapeHtml(i.amount)}</div>` : "";
     const paidHtml = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:6px">✅ Paid</span>` : "";
+    const doneHtml = i.done ? `<span class="badge" style="background:#232b3d;color:#8fb4e8;margin-left:6px">☑️ Done</span>` : "";
     const linksHtml = (i.links && i.links.length) ? `<div class="meta">` + i.links.map(l => `<div><a href="${escapeAttr(l)}" target="_blank" rel="noopener">${escapeHtml(l)}</a></div>`).join('') + `</div>` : '';
-    const imgHtml = i.image ? `<div style="margin-top:10px"><img src="${escapeAttr(i.image)}" style="max-width:160px;border-radius:8px;display:block"></div>` : '';
+    const imgs = (i.images && i.images.length) ? i.images : (i.image ? [i.image] : []);
+    const imgHtml = imgs.length ? `<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">` + imgs.map(src => `<img src="${escapeAttr(src)}" style="width:120px;height:120px;object-fit:cover;border-radius:8px;display:block">`).join('') + `</div>` : '';
     return `<div class="card" draggable="true" ondragstart="onDragStart(event)" data-id="${i.id}">
       <div class="top">
         <div style="flex:1">
-          <span class="badge cat">${c.icon} ${c.label}</span>${paidHtml}
+          <span class="badge cat">${c.icon} ${c.label}</span>${paidHtml}${doneHtml}
           <div class="title" style="margin-top:6px">${titleHtml}</div>
           ${urlMeta}
           ${amountHtml}
@@ -987,7 +1011,7 @@ function emailUpcomingReminders() {
   const todayStr = localISODate(today);
   const next5Days = Array.from({ length: 5 }, (_, n) => localISODate(new Date(today.getTime() + n * 86400000)));
   const dayLabel = d => d === todayStr ? "Today" : d === next5Days[1] ? "Tomorrow" : new Date(d + "T00:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  const list = activeItems().filter(i => next5Days.includes(i.date) && i.emailAlert)
+  const list = activeItems().filter(i => next5Days.includes(i.date) && i.emailAlert && !i.paid && !i.done)
     .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
   if (!list.length) { alert("No reminders with email alerts on in the next 5 days."); return; }
   const subject = encodeURIComponent(`Reminders (${list.length})`);
@@ -1033,11 +1057,11 @@ function openModal(id, presetCat, presetStatus) {
     document.getElementById("fRecurrence").value = it.recurrence || "";
     document.getElementById("fStatus").value = it.status || "";
     document.getElementById("fLinks").value = (it.links && it.links.length) ? it.links.join('\n') : '';
-    document.getElementById("fImageData").value = it.image || '';
+    modalImages = (it.images && it.images.length) ? [...it.images] : (it.image ? [it.image] : []);
+    renderImagePreview();
     document.getElementById("fEmailAlert").checked = !!it.emailAlert;
     document.getElementById("fPaid").checked = !!it.paid;
-    if(it.image) document.getElementById('fImagePreview').innerHTML = `<img src="${escapeAttr(it.image)}" style="max-width:180px;border-radius:8px">`;
-    else document.getElementById('fImagePreview').innerHTML = '';
+    document.getElementById("fDone").checked = !!it.done;
   } else {
     t.textContent = "Add item";
     document.getElementById("editId").value = "";
@@ -1051,10 +1075,11 @@ function openModal(id, presetCat, presetStatus) {
     document.getElementById("fRecurrence").value = "";
     document.getElementById("fStatus").value = presetStatus || "";
     document.getElementById("fLinks").value = '';
-    document.getElementById("fImageData").value = '';
-    document.getElementById('fImagePreview').innerHTML = '';
+    modalImages = [];
+    renderImagePreview();
     document.getElementById("fEmailAlert").checked = false;
     document.getElementById("fPaid").checked = false;
+    document.getElementById("fDone").checked = false;
   }
   onCatChange();
   setTimeout(() => document.getElementById("fTitle").focus(), 50);
@@ -1082,11 +1107,13 @@ function saveItem() {
     recurrence: document.getElementById("fRecurrence").value,
     status: document.getElementById("fStatus").value,
     links: (document.getElementById("fLinks").value || '').split(/\r?\n/).map(s=>s.trim()).filter(Boolean),
-    image: document.getElementById("fImageData").value || '',
+    images: [...modalImages],
+    image: modalImages[0] || '',
     emailAlert: document.getElementById("fEmailAlert").checked,
-    paid: document.getElementById("fPaid").checked
+    paid: document.getElementById("fPaid").checked,
+    done: document.getElementById("fDone").checked
   };
-  if (!data.title && !data.url && !data.note && (!data.links || !data.links.length) && !data.image) { alert("Add at least a title, link, note, image or links."); return; }
+  if (!data.title && !data.url && !data.note && (!data.links || !data.links.length) && !data.images.length) { alert("Add at least a title, link, note, image or links."); return; }
   if (id) {
     const it = items.find(x => x.id === id);
     Object.assign(it, data);
@@ -1171,10 +1198,22 @@ function renderDashboard() {
     if (!a.date && b.date) return 1;
     return a.created - b.created;
   });
-  const upcoming = active.filter(i => next5Days.includes(i.date))
-    .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
-  const todayItems = upcoming.filter(i => i.date === todayStr);
-  const restUpcoming = upcoming.filter(i => i.date !== todayStr);
+  const occurrences = [];
+  active.forEach(i => {
+    if (!i.date || i.paid) return;
+    if (i.recurrence) {
+      const winEnd = new Date(today.getTime() + 4 * 86400000);
+      getOccurrenceDates(i, today, winEnd).forEach(d => {
+        if (d === i.date && i.done) return;
+        occurrences.push({ item: i, date: d });
+      });
+    } else if (!i.done && next5Days.includes(i.date)) {
+      occurrences.push({ item: i, date: i.date });
+    }
+  });
+  occurrences.sort((a, b) => a.date.localeCompare(b.date) || ((a.item.time||"").localeCompare(b.item.time||"")));
+  const todayOccs = occurrences.filter(o => o.date === todayStr);
+  const restUpcoming = occurrences.filter(o => o.date !== todayStr);
   const upcomingLabel = d => {
     if (d === todayStr) return "Today";
     if (d === next5Days[1]) return "Tomorrow";
@@ -1185,16 +1224,46 @@ function renderDashboard() {
     items: active.filter(i => i.cat === k).slice().sort((a,b) => b.created - a.created).slice(0,5)
   }));
 
-  const row = (i, metaTxt) => {
+  const row = (i, metaTxt, dateForToday) => {
     const meta = metaTxt !== undefined ? metaTxt : (i.date ? fmtDate(i.date) + (i.time ? " · " + fmtTime(i.time) : "") : "");
-    const isToday = i.date === todayStr;
+    const isToday = (dateForToday !== undefined ? dateForToday : i.date) === todayStr;
+    const paidTag = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:8px">✅ Paid</span>` : "";
     return `<div class="dash-row${isToday ? ' today' : ''}" onclick="openModal('${i.id}')">
-    <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>
+    <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>${paidTag}
     <span class="rmeta">${meta}</span></div>`;
   };
 
+  const groupedRows = (occs, sectionKey, metaOf) => {
+    const byCat = {};
+    occs.forEach(o => (byCat[o.item.cat] = byCat[o.item.cat] || []).push(o));
+    return getOrderedCatKeys().filter(k => byCat[k]).map(k => {
+      const group = byCat[k];
+      if (group.length === 1) {
+        const o = group[0];
+        return row(o.item, metaOf(o), o.date);
+      }
+      const gKey = `${sectionKey}-${k}`;
+      const collapsed = dashCollapsed[gKey] !== false;
+      const header = `<div class="dash-row" style="cursor:pointer" onclick="toggleDashSection('${gKey}')">
+        <span class="chev" style="margin-right:2px">${collapsed ? "+" : "−"}</span>
+        <span>${CATS[k].icon}</span><span>${escapeHtml(CATS[k].label)}</span>
+        <span class="rmeta">${group.length}</span></div>`;
+      const rows = collapsed ? "" : `<div style="padding-left:22px">${group.map(o => row(o.item, metaOf(o), o.date)).join("")}</div>`;
+      return header + rows;
+    }).join("");
+  };
+
+  const groupedRowsByDay = (occs, sectionKey) => {
+    const byDate = {};
+    occs.forEach(o => (byDate[o.date] = byDate[o.date] || []).push(o));
+    return Object.keys(byDate).sort().map(d => {
+      const dayHtml = groupedRows(byDate[d], `${sectionKey}-${d}`, o => (o.item.time ? fmtTime(o.item.time) : ""));
+      return `<div style="padding:10px 2px 4px;color:var(--muted);font-size:12px;font-weight:600">${upcomingLabel(d)}</div>${dayHtml}`;
+    }).join("");
+  };
+
   const hcard = i => `<div class="hcard" onclick="openModal('${i.id}')">
-    <span class="badge cat">${CATS[i.cat].icon} ${escapeHtml(CATS[i.cat].label)}</span>
+    <span class="badge cat">${CATS[i.cat].icon} ${escapeHtml(CATS[i.cat].label)}</span>${i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:6px">✅</span>` : ""}
     <div class="htitle" style="margin-top:8px">${escapeHtml(i.title || i.url || i.note || "(untitled)")}</div>
     ${i.amount ? `<div class="hmeta">💰 ${escapeHtml(i.amount)}</div>` : ""}
   </div>`;
@@ -1242,7 +1311,7 @@ function renderDashboard() {
         <span class="chev">${dashCollapsed.today ? "+" : "−"}</span>
         <div style="min-width:0"><h3 style="margin:0">Today</h3><p class="sub" style="margin:2px 0 10px">Due today</p></div>
       </div>
-      ${dashCollapsed.today ? "" : (todayItems.length ? todayItems.map(i => row(i, "Today" + (i.time ? " · " + fmtTime(i.time) : ""))).join("") : emptyRow("Nothing due today."))}
+      ${dashCollapsed.today ? "" : (todayOccs.length ? groupedRows(todayOccs, "todaygrp", o => "Today" + (o.item.time ? " · " + fmtTime(o.item.time) : "")) : emptyRow("Nothing due today."))}
     </div>
     <div class="dash-section">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="toggleDashSection('upcoming')">
@@ -1250,7 +1319,7 @@ function renderDashboard() {
         <div style="min-width:0"><h3 style="margin:0">Upcoming Reminders</h3><p class="sub" style="margin:2px 0 10px">Reminders for the next 5 days</p></div>
         ${(!dashCollapsed.upcoming && restUpcoming.length) ? `<button class="btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12.5px" onclick="event.stopPropagation();emailUpcomingReminders()">📧 Email these</button>` : ""}
       </div>
-      ${dashCollapsed.upcoming ? "" : (restUpcoming.length ? restUpcoming.map(i => row(i, upcomingLabel(i.date) + (i.time ? " · " + fmtTime(i.time) : ""))).join("") : emptyRow("Nothing else due in the next 5 days."))}
+      ${dashCollapsed.upcoming ? "" : (restUpcoming.length ? groupedRowsByDay(restUpcoming, "upcgrp") : emptyRow("Nothing else due in the next 5 days."))}
     </div>
     <div class="dash-section">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleDashSection('pinned')">
@@ -1382,13 +1451,31 @@ function checkReminders(force){
   localStorage.setItem(STORE + '.lastNotify', today);
 }
 
+async function saveFileWithDialog(blob, filename, mimeType, extension, description){
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description, accept: { [mimeType]: [extension] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (e) {
+      if (e.name === "AbortError") return; // user cancelled the dialog
+      // fall through to the plain download below if the picker itself failed
+    }
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+}
 function exportItems(){
   const data = JSON.stringify(items, null, 2);
   const blob = new Blob([data], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `planner-backup-${new Date().toISOString().slice(0,10)}.json`;
-  document.body.appendChild(a); a.click(); a.remove();
+  saveFileWithDialog(blob, `planner-backup-${new Date().toISOString().slice(0,10)}.json`, "application/json", ".json", "JSON file");
 }
 function icsEscape(s){
   return String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
@@ -1426,10 +1513,7 @@ function exportICS(){
   });
   lines.push("END:VCALENDAR");
   const blob = new Blob([lines.join("\r\n")], { type: "text/calendar" });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `planner-reminders-${localISODate()}.ics`;
-  document.body.appendChild(a); a.click(); a.remove();
+  saveFileWithDialog(blob, `planner-reminders-${localISODate()}.ics`, "text/calendar", ".ics", "Calendar file");
 }
 function importFile(evt){
   const f = evt.target.files[0]; if(!f) return;
@@ -1450,22 +1534,39 @@ function backupNow(){
   alert('Backup saved locally.');
 }
 
+let modalImages = [];
+function renderImagePreview(){
+  const prev = document.getElementById('fImagePreview');
+  prev.innerHTML = modalImages.map((src, idx) => `
+    <div style="position:relative">
+      <img src="${escapeAttr(src)}" style="width:90px;height:90px;object-fit:cover;border-radius:8px;display:block">
+      <button type="button" onclick="removeImageAt(${idx})" title="Remove"
+        style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:13px;line-height:1">✕</button>
+    </div>`).join('');
+  document.getElementById('fImageData').value = JSON.stringify(modalImages);
+}
+function removeImageAt(idx){
+  modalImages.splice(idx, 1);
+  renderImagePreview();
+}
 function removeImage(){
+  modalImages = [];
   const inp = document.getElementById('fImage'); if(inp) inp.value = '';
-  const data = document.getElementById('fImageData'); if(data) data.value = '';
-  const prev = document.getElementById('fImagePreview'); if(prev) prev.innerHTML = '';
+  renderImagePreview();
 }
 
 function handleImageChange(e){
-  const f = e.target.files && e.target.files[0];
-  if(!f) return;
-  const reader = new FileReader();
-  reader.onload = function(){
-    const data = reader.result;
-    document.getElementById('fImageData').value = data;
-    document.getElementById('fImagePreview').innerHTML = `<img src="${escapeAttr(data)}" style="max-width:180px;border-radius:8px">`;
-  };
-  reader.readAsDataURL(f);
+  const files = Array.from(e.target.files || []);
+  if(!files.length) return;
+  Promise.all(files.map(f => new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(f);
+  }))).then(results => {
+    modalImages.push(...results);
+    renderImagePreview();
+    e.target.value = '';
+  });
 }
 
 let calendarView = "month";
