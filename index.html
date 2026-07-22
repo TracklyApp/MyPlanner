@@ -364,6 +364,12 @@
     padding-left: 8px; border-radius: 6px; font-weight: 700;
   }
   .dash-row.today .rmeta { color: var(--accent); font-weight: 700; }
+  .dash-row.overdue {
+    background: rgba(220,80,90,0.12);
+    border-left: 3px solid var(--danger);
+    padding-left: 8px; border-radius: 6px;
+  }
+  .dash-row.overdue .rmeta { color: var(--danger); font-weight: 700; }
   #calViewTabs .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .cat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .cat-chip {
@@ -699,6 +705,7 @@ function advanceRecurringReminders() {
       i.date = newDate;
       i.amount = "";
       i.paid = false;
+      i.done = false;
       changed = true;
     }
   });
@@ -1199,10 +1206,24 @@ function renderDashboard() {
     if (!a.date && b.date) return 1;
     return a.created - b.created;
   });
-  const upcoming = active.filter(i => next5Days.includes(i.date) && !i.paid && !i.done)
+  const occurrences = [];
+  active.forEach(i => {
+    if (!i.date || i.paid) return;
+    if (i.recurrence) {
+      const winEnd = new Date(today.getTime() + 4 * 86400000);
+      getOccurrenceDates(i, today, winEnd).forEach(d => {
+        if (d === i.date && i.done) return;
+        occurrences.push({ item: i, date: d });
+      });
+    } else if (!i.done && next5Days.includes(i.date)) {
+      occurrences.push({ item: i, date: i.date });
+    }
+  });
+  occurrences.sort((a, b) => a.date.localeCompare(b.date) || ((a.item.time||"").localeCompare(b.item.time||"")));
+  const todayOccs = occurrences.filter(o => o.date === todayStr);
+  const restUpcoming = occurrences.filter(o => o.date !== todayStr);
+  const overdueItems = active.filter(i => i.date && i.date < todayStr && !i.paid && !i.done)
     .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
-  const todayItems = upcoming.filter(i => i.date === todayStr);
-  const restUpcoming = upcoming.filter(i => i.date !== todayStr);
   const upcomingLabel = d => {
     if (d === todayStr) return "Today";
     if (d === next5Days[1]) return "Tomorrow";
@@ -1213,13 +1234,44 @@ function renderDashboard() {
     items: active.filter(i => i.cat === k).slice().sort((a,b) => b.created - a.created).slice(0,5)
   }));
 
-  const row = (i, metaTxt) => {
+  const row = (i, metaTxt, dateForToday) => {
     const meta = metaTxt !== undefined ? metaTxt : (i.date ? fmtDate(i.date) + (i.time ? " · " + fmtTime(i.time) : "") : "");
-    const isToday = i.date === todayStr;
+    const rowDate = dateForToday !== undefined ? dateForToday : i.date;
+    const isToday = rowDate === todayStr;
+    const isOverdue = rowDate < todayStr;
     const paidTag = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:8px">✅ Paid</span>` : "";
-    return `<div class="dash-row${isToday ? ' today' : ''}" onclick="openModal('${i.id}')">
+    return `<div class="dash-row${isToday ? ' today' : isOverdue ? ' overdue' : ''}" onclick="openModal('${i.id}')">
     <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>${paidTag}
     <span class="rmeta">${meta}</span></div>`;
+  };
+
+  const groupedRows = (occs, sectionKey, metaOf) => {
+    const byCat = {};
+    occs.forEach(o => (byCat[o.item.cat] = byCat[o.item.cat] || []).push(o));
+    return getOrderedCatKeys().filter(k => byCat[k]).map(k => {
+      const group = byCat[k];
+      if (group.length === 1) {
+        const o = group[0];
+        return row(o.item, metaOf(o), o.date);
+      }
+      const gKey = `${sectionKey}-${k}`;
+      const collapsed = dashCollapsed[gKey] !== false;
+      const header = `<div class="dash-row" style="cursor:pointer" onclick="toggleDashSection('${gKey}')">
+        <span class="chev" style="margin-right:2px">${collapsed ? "+" : "−"}</span>
+        <span>${CATS[k].icon}</span><span>${escapeHtml(CATS[k].label)}</span>
+        <span class="rmeta">${group.length}</span></div>`;
+      const rows = collapsed ? "" : `<div style="padding-left:22px">${group.map(o => row(o.item, metaOf(o), o.date)).join("")}</div>`;
+      return header + rows;
+    }).join("");
+  };
+
+  const groupedRowsByDay = (occs, sectionKey) => {
+    const byDate = {};
+    occs.forEach(o => (byDate[o.date] = byDate[o.date] || []).push(o));
+    return Object.keys(byDate).sort().map(d => {
+      const dayHtml = groupedRows(byDate[d], `${sectionKey}-${d}`, o => (o.item.time ? fmtTime(o.item.time) : ""));
+      return `<div style="padding:10px 2px 4px;color:var(--muted);font-size:12px;font-weight:600">${upcomingLabel(d)}</div>${dayHtml}`;
+    }).join("");
   };
 
   const hcard = i => `<div class="hcard" onclick="openModal('${i.id}')">
@@ -1271,15 +1323,22 @@ function renderDashboard() {
         <span class="chev">${dashCollapsed.today ? "+" : "−"}</span>
         <div style="min-width:0"><h3 style="margin:0">Today</h3><p class="sub" style="margin:2px 0 10px">Due today</p></div>
       </div>
-      ${dashCollapsed.today ? "" : (todayItems.length ? todayItems.map(i => row(i, "Today" + (i.time ? " · " + fmtTime(i.time) : ""))).join("") : emptyRow("Nothing due today."))}
+      ${dashCollapsed.today ? "" : (todayOccs.length ? groupedRows(todayOccs, "todaygrp", o => "Today" + (o.item.time ? " · " + fmtTime(o.item.time) : "")) : emptyRow("Nothing due today."))}
     </div>
+    ${overdueItems.length ? `<div class="dash-section">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="toggleDashSection('overdue')">
+        <span class="chev">${dashCollapsed.overdue ? "+" : "−"}</span>
+        <div style="min-width:0"><h3 style="margin:0">Overdue</h3><p class="sub" style="margin:2px 0 10px">Past due, not finished</p></div>
+      </div>
+      ${dashCollapsed.overdue ? "" : groupedRows(overdueItems.map(i => ({ item: i, date: i.date })), "overduegrp", o => fmtDate(o.date) + (o.item.time ? " · " + fmtTime(o.item.time) : ""))}
+    </div>` : ""}
     <div class="dash-section">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="toggleDashSection('upcoming')">
         <span class="chev">${dashCollapsed.upcoming ? "+" : "−"}</span>
         <div style="min-width:0"><h3 style="margin:0">Upcoming Reminders</h3><p class="sub" style="margin:2px 0 10px">Reminders for the next 5 days</p></div>
         ${(!dashCollapsed.upcoming && restUpcoming.length) ? `<button class="btn secondary" style="margin-left:auto;padding:6px 12px;font-size:12.5px" onclick="event.stopPropagation();emailUpcomingReminders()">📧 Email these</button>` : ""}
       </div>
-      ${dashCollapsed.upcoming ? "" : (restUpcoming.length ? restUpcoming.map(i => row(i, upcomingLabel(i.date) + (i.time ? " · " + fmtTime(i.time) : ""))).join("") : emptyRow("Nothing else due in the next 5 days."))}
+      ${dashCollapsed.upcoming ? "" : (restUpcoming.length ? groupedRowsByDay(restUpcoming, "upcgrp") : emptyRow("Nothing else due in the next 5 days."))}
     </div>
     <div class="dash-section">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="toggleDashSection('pinned')">
