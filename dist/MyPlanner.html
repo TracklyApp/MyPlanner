@@ -362,6 +362,12 @@
     padding-left: 8px; border-radius: 6px; font-weight: 700;
   }
   .dash-row.today .rmeta { color: var(--accent); font-weight: 700; }
+  .dash-row.overdue {
+    background: rgba(220,80,90,0.12);
+    border-left: 3px solid var(--danger);
+    padding-left: 8px; border-radius: 6px;
+  }
+  .dash-row.overdue .rmeta { color: var(--danger); font-weight: 700; }
   #calViewTabs .btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   .cat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .cat-chip {
@@ -1214,6 +1220,8 @@ function renderDashboard() {
   occurrences.sort((a, b) => a.date.localeCompare(b.date) || ((a.item.time||"").localeCompare(b.item.time||"")));
   const todayOccs = occurrences.filter(o => o.date === todayStr);
   const restUpcoming = occurrences.filter(o => o.date !== todayStr);
+  const overdueItems = active.filter(i => i.date && i.date < todayStr && !i.paid && !i.done)
+    .sort((a,b) => a.date.localeCompare(b.date) || (a.time||"").localeCompare(b.time||""));
   const upcomingLabel = d => {
     if (d === todayStr) return "Today";
     if (d === next5Days[1]) return "Tomorrow";
@@ -1226,9 +1234,11 @@ function renderDashboard() {
 
   const row = (i, metaTxt, dateForToday) => {
     const meta = metaTxt !== undefined ? metaTxt : (i.date ? fmtDate(i.date) + (i.time ? " · " + fmtTime(i.time) : "") : "");
-    const isToday = (dateForToday !== undefined ? dateForToday : i.date) === todayStr;
+    const rowDate = dateForToday !== undefined ? dateForToday : i.date;
+    const isToday = rowDate === todayStr;
+    const isOverdue = rowDate < todayStr;
     const paidTag = i.paid ? `<span class="badge" style="background:#1d3b2a;color:#7ee2a8;margin-left:8px">✅ Paid</span>` : "";
-    return `<div class="dash-row${isToday ? ' today' : ''}" onclick="openModal('${i.id}')">
+    return `<div class="dash-row${isToday ? ' today' : isOverdue ? ' overdue' : ''}" onclick="openModal('${i.id}')">
     <span>${CATS[i.cat].icon}</span><span>${escapeHtml(i.title || i.url || i.note || "(untitled)")}</span>${paidTag}
     <span class="rmeta">${meta}</span></div>`;
   };
@@ -1313,6 +1323,13 @@ function renderDashboard() {
       </div>
       ${dashCollapsed.today ? "" : (todayOccs.length ? groupedRows(todayOccs, "todaygrp", o => "Today" + (o.item.time ? " · " + fmtTime(o.item.time) : "")) : emptyRow("Nothing due today."))}
     </div>
+    ${overdueItems.length ? `<div class="dash-section">
+      <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="toggleDashSection('overdue')">
+        <span class="chev">${dashCollapsed.overdue ? "+" : "−"}</span>
+        <div style="min-width:0"><h3 style="margin:0">Overdue</h3><p class="sub" style="margin:2px 0 10px">Past due, not finished</p></div>
+      </div>
+      ${dashCollapsed.overdue ? "" : groupedRows(overdueItems.map(i => ({ item: i, date: i.date })), "overduegrp", o => fmtDate(o.date) + (o.item.time ? " · " + fmtTime(o.item.time) : ""))}
+    </div>` : ""}
     <div class="dash-section">
       <div style="display:flex;align-items:center;gap:10px;cursor:pointer;flex-wrap:wrap" onclick="toggleDashSection('upcoming')">
         <span class="chev">${dashCollapsed.upcoming ? "+" : "−"}</span>
