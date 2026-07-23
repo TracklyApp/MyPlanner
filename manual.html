@@ -366,8 +366,15 @@
       <p><span class="ui">➕ New Note</span> · <span class="ui">✅ New Task</span> · <span class="ui">🌐 Save Website</span> · <span class="ui">📄 Scan Document</span> — each opens the add-item form with the right category already selected.</p>
       <h3>Stats</h3>
       <p>The Notes, Tasks, Websites, and Favorites cards show live counts — click Notes, Websites, or Favorites to jump straight to that list.</p>
-      <h3>Pinned Notes &amp; Upcoming Reminders</h3>
-      <p><strong>Pinned Notes</strong> shows anything you've pinned (📌); <strong>Upcoming Reminders</strong> shows everything due in the next 5 days, with a <span class="ui">📧 Email these</span> button to send them all at once. Both sections can be collapsed with the ▾ arrow in their heading.</p>
+      <h3>Today, Overdue &amp; Upcoming Reminders</h3>
+      <p><strong>Today</strong> lists everything due today. If a reminder's date has passed and it's still not marked <span class="ui">Paid</span> or <span class="ui">Done</span>, it moves into a red <strong>Overdue</strong> section instead of silently disappearing. <strong>Upcoming Reminders</strong> covers the next 5 days, grouped day by day, with a <span class="ui">📧 Email these</span> button to send them all at once. All three sections can be collapsed with the ▾ arrow in their heading.</p>
+      <p>When two or more items in the same section share a category (e.g. two Health reminders), they're folded into a single row like <span class="ui">❤️ Health · 2</span> — click it to expand the dropdown and see each one.</p>
+      <div class="tip">
+        <span class="ticon">＊</span>
+        <p><strong>Daily reminders show every day:</strong> a reminder set to <span class="ui">Repeat → Daily</span> appears once per day for as many of the next 5 days as apply — not just on its stored date. Marking it <span class="ui">Done</span> only hides today's occurrence; tomorrow's still shows up as not done.</p>
+      </div>
+      <h3>Pinned Notes</h3>
+      <p><strong>Pinned Notes</strong> shows anything you've pinned (📌).</p>
       <h3>Categories</h3>
       <p>Clicking a category (e.g. <span class="ui">📚 Books</span>) narrows the page down to just that category, showing a horizontally-scrolling row of its items, a <span class="ui">+ Add item</span> button preset to that category, and a <span class="ui">← Show all</span> button to return.</p>
     </section>
@@ -407,7 +414,7 @@
       </div>
       <p>The <span class="ui">◀ ▶</span> arrows step to the previous/next period.</p>
       <h3>Recurring reminders</h3>
-      <p>An item with <span class="ui">Repeat</span> set to anything other than "Does not repeat" automatically shows up in every future month/year in the calendar, on the matching day. Once a recurring reminder's date passes, the app rolls it forward to the next occurrence automatically — and <strong>clears the Amount field and turns off Paid</strong>, so you enter fresh values for the new period.</p>
+      <p>An item with <span class="ui">Repeat</span> set to anything other than "Does not repeat" automatically shows up in every future month/year in the calendar, on the matching day. Once a recurring reminder's date passes, the app rolls it forward to the next occurrence automatically — and <strong>clears the Amount field, and turns off Paid and Done</strong>, so you get a clean slate for the new period instead of it staying checked off forever.</p>
     </section>
 
     <section id="email">
